@@ -104,6 +104,15 @@ CREATE TABLE IF NOT EXISTS admin_whitelist (
     phone TEXT PRIMARY KEY,
     added_at TEXT NOT NULL
 );
+
+-- Optimization: Index for list_orders_for_executor (JOINs) and list_matches_for_executor
+CREATE INDEX IF NOT EXISTS idx_matches_executor_id ON matches(executor_id);
+
+-- Optimization: Index for list_orders_by_customer
+CREATE INDEX IF NOT EXISTS idx_orders_customer_id ON orders(customer_id);
+
+-- Optimization: Index for get_rating_summary
+CREATE INDEX IF NOT EXISTS idx_ratings_to_user_id ON ratings(to_user_id);
 """
 
 

@@ -1,2 +1,10 @@
 AGENTS.md
 CONTINUITY.md
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+*.db

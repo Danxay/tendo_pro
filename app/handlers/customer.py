@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import html
+
 from aiogram import F, Router
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
@@ -253,7 +255,7 @@ async def customer_close_yes(callback: CallbackQuery, db) -> None:
         if executor and executor.get("tg_id"):
             await callback.bot.send_message(
                 executor["tg_id"],
-                f"Добрый день! Заказчик закрыл заказ {order_id} {order.get('name','')}. Подтвердите закрытие.",
+                f"Добрый день! Заказчик закрыл заказ {order_id} {html.escape(order.get('name','') or '')}. Подтвердите закрытие.",
                 reply_markup=InlineKeyboardMarkup(
                     inline_keyboard=[
                         [InlineKeyboardButton(text="Подтвердить закрытие", callback_data=f"exec_close_confirm:{order_id}")]
@@ -374,14 +376,19 @@ async def customer_responses_liked(callback: CallbackQuery, db) -> None:
         executor = await db.get_user_by_id(match["executor_id"])
         status = "принял" if match.get("executor_decision") == MATCH_DECISION_LIKED else "ожидает"
         phone_line = f"Телефон: {executor.get('phone','-')}" if match.get("executor_decision") == MATCH_DECISION_LIKED else ""
+
+        first_name_raw = executor.get("first_name", "") or ""
+        first_name = html.escape(first_name_raw)
+        last_name = html.escape(executor.get("last_name", "") or "")
+
         lines.append(
-            f"{executor.get('first_name','')} {executor.get('last_name','')} - {status} {phone_line}".strip()
+            f"{first_name} {last_name} - {status} {phone_line}".strip()
         )
         if match.get("executor_decision") == MATCH_DECISION_LIKED:
             buttons.append(
                 [
                     InlineKeyboardButton(
-                        text=f"Подтвердить: {executor.get('first_name','')}",
+                        text=f"Подтвердить: {first_name_raw}",
                         callback_data=f"cust_confirm_exec:{order_id}:{executor['id']}",
                     )
                 ]
@@ -410,7 +417,7 @@ async def customer_confirm_executor(callback: CallbackQuery, db) -> None:
     if executor and executor.get("tg_id"):
         await callback.bot.send_message(
             executor["tg_id"],
-            f"Заказчик подтвердил исполнителя по заказу {order_id} {order.get('name','')}.",
+            f"Заказчик подтвердил исполнителя по заказу {order_id} {html.escape(order.get('name','') or '')}.",
         )
     await callback.message.answer("Исполнитель подтвержден. Заказ закреплен.")
 
@@ -432,11 +439,14 @@ async def customer_responses_declined(callback: CallbackQuery, db) -> None:
     lines = []
     for match in matches:
         executor = await db.get_user_by_id(match["executor_id"])
-        lines.append(f"{executor.get('first_name','')} {executor.get('last_name','')}")
+        first_name_raw = executor.get("first_name", "") or ""
+        first_name = html.escape(first_name_raw)
+        last_name = html.escape(executor.get("last_name", "") or "")
+        lines.append(f"{first_name} {last_name}")
         buttons.append(
             [
                 InlineKeyboardButton(
-                    text=f"Изменить решение: {executor.get('first_name','')}",
+                    text=f"Изменить решение: {first_name_raw}",
                     callback_data=f"cust_change_decision:{order_id}:{executor['id']}",
                 )
             ]

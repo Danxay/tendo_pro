@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import html
+
 from aiogram import F, Router
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
@@ -225,7 +227,7 @@ async def exec_close_yes(callback: CallbackQuery, db) -> None:
     if customer and customer.get("tg_id"):
         await callback.bot.send_message(
             customer["tg_id"],
-            f"Добрый день! Исполнитель закрыл заказ {order_id} {order.get('name','')}. Подтвердите закрытие.",
+        f"Добрый день! Исполнитель закрыл заказ {order_id} {html.escape(order.get('name','') or '')}. Подтвердите закрытие.",
             reply_markup=InlineKeyboardMarkup(
                 inline_keyboard=[
                     [InlineKeyboardButton(text="Подтвердить закрытие", callback_data=f"cust_close_confirm:{order_id}")]
@@ -295,7 +297,7 @@ async def exec_chosen_yes(callback: CallbackQuery, db) -> None:
         if customer and customer.get("tg_id"):
             await callback.bot.send_message(
                 customer["tg_id"],
-                f"Исполнитель принял заказ {order_id} {order.get('name','')}.",
+                f"Исполнитель принял заказ {order_id} {html.escape(order.get('name','') or '')}.",
             )
     await callback.message.answer("Заказ принят и добавлен в открытые.")
     await callback.answer()
@@ -365,7 +367,7 @@ async def exec_match_yes(callback: CallbackQuery, db) -> None:
     if customer and customer.get("tg_id"):
         await callback.bot.send_message(
             customer["tg_id"],
-            f"Исполнитель откликнулся на заказ {order_id} {order.get('name','')}.",
+            f"Исполнитель откликнулся на заказ {order_id} {html.escape(order.get('name','') or '')}.",
         )
     await callback.answer("Отклик отправлен")
     await exec_match_list(callback, db)

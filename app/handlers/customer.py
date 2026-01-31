@@ -172,14 +172,14 @@ async def customer_order_detail(callback: CallbackQuery, db) -> None:
         await callback.answer("Заказ не найден", show_alert=True)
         return
     if order.get("status") == ORDER_STATUS_CLOSED:
-        await callback.message.answer(
+        await callback.message.edit_text(
             format_order(order),
             reply_markup=InlineKeyboardMarkup(
                 inline_keyboard=[[InlineKeyboardButton(text="Назад", callback_data="cust_back_main")]]
             ),
         )
     else:
-        await callback.message.answer(
+        await callback.message.edit_text(
             format_order(order),
             reply_markup=order_actions_keyboard(order_id, for_customer=True, prefix="cust_order"),
         )
@@ -212,7 +212,7 @@ async def customer_order_responses(callback: CallbackQuery, db) -> None:
     if not order or order["customer_id"] != user["id"]:
         await callback.answer("Заказ не найден", show_alert=True)
         return
-    await callback.message.answer(
+    await callback.message.edit_text(
         "Отклики:",
         reply_markup=responses_menu_keyboard(order_id, prefix="cust_order"),
     )
@@ -226,7 +226,7 @@ async def customer_order_close(callback: CallbackQuery, db) -> None:
         await callback.answer()
         return
     order_id = int(callback.data.split(":", 1)[1])
-    await callback.message.answer(
+    await callback.message.edit_text(
         "Вы действительно хотите закрыть заказ?",
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
@@ -262,10 +262,10 @@ async def customer_close_yes(callback: CallbackQuery, db) -> None:
                     ]
                 ),
             )
-        await callback.message.answer("Ожидайте подтверждение исполнителя")
+        await callback.message.edit_text("Ожидайте подтверждение исполнителя")
     else:
         await db.set_order_status(order_id, ORDER_STATUS_CLOSED)
-        await callback.message.answer("Заказ закрыт.")
+        await callback.message.edit_text("Заказ закрыт.")
     await callback.answer()
 
 
@@ -300,7 +300,12 @@ async def customer_responses_new(callback: CallbackQuery, db) -> None:
         return
     executor = await _next_executor_candidate(order_id, db)
     if not executor:
-        await callback.message.answer("Доступные исполнители закончились")
+        await callback.message.edit_text(
+            "Доступные исполнители закончились",
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[[InlineKeyboardButton(text="Назад", callback_data=f"cust_order_responses:{order_id}")]]
+            ),
+        )
         await callback.answer()
         return
     text = format_executor_card(executor)
@@ -317,7 +322,7 @@ async def customer_responses_new(callback: CallbackQuery, db) -> None:
             [InlineKeyboardButton(text="Назад", callback_data=f"cust_order_responses:{order_id}")],
         ]
     )
-    await callback.message.answer(text, reply_markup=keyboard)
+    await callback.message.edit_text(text, reply_markup=keyboard)
     await callback.answer()
 
 
@@ -367,7 +372,12 @@ async def customer_responses_liked(callback: CallbackQuery, db) -> None:
         return
     matches = await db.list_customer_likes(order_id)
     if not matches:
-        await callback.message.answer("Принятых исполнителей нет.")
+        await callback.message.edit_text(
+            "Принятых исполнителей нет.",
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[[InlineKeyboardButton(text="Назад", callback_data=f"cust_order_responses:{order_id}")]]
+            ),
+        )
         await callback.answer()
         return
     lines = []
@@ -397,7 +407,7 @@ async def customer_responses_liked(callback: CallbackQuery, db) -> None:
     lines.append(
         "Подтвердите исполнителя. Ваш заказ будет показываться до тех пор, пока Вы не подтвердите исполнителя."
     )
-    await callback.message.answer("\n".join(lines), reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+    await callback.message.edit_text("\n".join(lines), reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
     await callback.answer()
 
 
@@ -419,7 +429,7 @@ async def customer_confirm_executor(callback: CallbackQuery, db) -> None:
             executor["tg_id"],
             f"Заказчик подтвердил исполнителя по заказу {order_id} {html.escape(order.get('name','') or '')}.",
         )
-    await callback.message.answer("Исполнитель подтвержден. Заказ закреплен.")
+    await callback.message.edit_text("Исполнитель подтвержден. Заказ закреплен.")
 
 
 @router.callback_query(F.data.startswith("cust_order_responses_declined:"))
@@ -432,7 +442,12 @@ async def customer_responses_declined(callback: CallbackQuery, db) -> None:
         return
     matches = await db.list_customer_declines(order_id)
     if not matches:
-        await callback.message.answer("Отказанных исполнителей нет.")
+        await callback.message.edit_text(
+            "Отказанных исполнителей нет.",
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[[InlineKeyboardButton(text="Назад", callback_data=f"cust_order_responses:{order_id}")]]
+            ),
+        )
         await callback.answer()
         return
     buttons = []
@@ -474,4 +489,4 @@ async def customer_change_decision(callback: CallbackQuery, db) -> None:
             executor["tg_id"],
             "Добрый день! Вас выбрали исполнителем. Ознакомитесь в разделе Возможные заказы в пункте Вас выбрали",
         )
-    await callback.message.answer("Решение изменено.")
+    await callback.message.edit_text("Решение изменено.")

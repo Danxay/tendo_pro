@@ -467,7 +467,7 @@ async def customer_responses_declined(callback: CallbackQuery, db) -> None:
             ]
         )
     buttons.append([InlineKeyboardButton(text="Назад", callback_data=f"cust_order_responses:{order_id}")])
-    await callback.message.answer("\n".join(lines), reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+    await callback.message.edit_text("\n".join(lines), reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
     await callback.answer()
 
 

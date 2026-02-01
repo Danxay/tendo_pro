@@ -22,7 +22,7 @@ async def rate_callback(callback: CallbackQuery, state: FSMContext) -> None:
         rating_stars=int(stars),
     )
     await state.set_state(RatingState.waiting_review)
-    await callback.message.answer("Напишите отзыв или отправьте '-' чтобы пропустить")
+    await callback.message.edit_text("Напишите отзыв или отправьте '-' чтобы пропустить")
     await callback.answer()
 
 

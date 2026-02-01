@@ -211,32 +211,47 @@ async def multiselect_toggle(callback: CallbackQuery, state: FSMContext) -> None
     await callback.answer()
 
 
-async def _ask_next_order_sections(message: Message, state: FSMContext) -> None:
+async def _ask_next_order_sections(message: Message, state: FSMContext, edit: bool = False) -> None:
     data = await state.get_data()
     pending = data.get("pending_sections", [])
     if not pending:
         await state.set_state(OrderFlow.description)
-        await message.answer("Укажите кратко что необходимо сделать (до 50 слов)")
+        if edit:
+            await message.edit_text("Укажите кратко что необходимо сделать (до 50 слов)")
+        else:
+            await message.answer("Укажите кратко что необходимо сделать (до 50 слов)")
         return
     next_type = pending.pop(0)
     await state.update_data(pending_sections=pending)
     if next_type == "capital":
         await state.set_state(OrderFlow.sections_capital)
         await state.update_data(multiselect_options=SECTIONS_CAPITAL, multiselect_selected=[])
-        await message.answer(
-            "Укажите требуемые разделы (кап. строительство)",
-            reply_markup=multiselect_keyboard(SECTIONS_CAPITAL, set()),
-        )
+        if edit:
+            await message.edit_text(
+                "Укажите требуемые разделы (кап. строительство)",
+                reply_markup=multiselect_keyboard(SECTIONS_CAPITAL, set()),
+            )
+        else:
+            await message.answer(
+                "Укажите требуемые разделы (кап. строительство)",
+                reply_markup=multiselect_keyboard(SECTIONS_CAPITAL, set()),
+            )
     else:
         await state.set_state(OrderFlow.sections_linear)
         await state.update_data(multiselect_options=SECTIONS_LINEAR, multiselect_selected=[])
-        await message.answer(
-            "Укажите требуемые разделы (линейные объекты)",
-            reply_markup=multiselect_keyboard(SECTIONS_LINEAR, set()),
-        )
+        if edit:
+            await message.edit_text(
+                "Укажите требуемые разделы (линейные объекты)",
+                reply_markup=multiselect_keyboard(SECTIONS_LINEAR, set()),
+            )
+        else:
+            await message.answer(
+                "Укажите требуемые разделы (линейные объекты)",
+                reply_markup=multiselect_keyboard(SECTIONS_LINEAR, set()),
+            )
 
 
-async def _ask_next_executor_sections(message: Message, state: FSMContext, db) -> None:
+async def _ask_next_executor_sections(message: Message, state: FSMContext, db, edit: bool = False) -> None:
     data = await state.get_data()
     pending = data.get("pending_sections", [])
     if not pending:
@@ -247,17 +262,29 @@ async def _ask_next_executor_sections(message: Message, state: FSMContext, db) -
     if next_type == "capital":
         await state.set_state(ExecutorReg.sections_capital)
         await state.update_data(multiselect_options=SECTIONS_CAPITAL, multiselect_selected=[])
-        await message.answer(
-            "Укажите разделы (кап. строительство)",
-            reply_markup=multiselect_keyboard(SECTIONS_CAPITAL, set()),
-        )
+        if edit:
+            await message.edit_text(
+                "Укажите разделы (кап. строительство)",
+                reply_markup=multiselect_keyboard(SECTIONS_CAPITAL, set()),
+            )
+        else:
+            await message.answer(
+                "Укажите разделы (кап. строительство)",
+                reply_markup=multiselect_keyboard(SECTIONS_CAPITAL, set()),
+            )
     else:
         await state.set_state(ExecutorReg.sections_linear)
         await state.update_data(multiselect_options=SECTIONS_LINEAR, multiselect_selected=[])
-        await message.answer(
-            "Укажите разделы (линейные объекты)",
-            reply_markup=multiselect_keyboard(SECTIONS_LINEAR, set()),
-        )
+        if edit:
+            await message.edit_text(
+                "Укажите разделы (линейные объекты)",
+                reply_markup=multiselect_keyboard(SECTIONS_LINEAR, set()),
+            )
+        else:
+            await message.answer(
+                "Укажите разделы (линейные объекты)",
+                reply_markup=multiselect_keyboard(SECTIONS_LINEAR, set()),
+            )
 
 
 @router.callback_query(F.data == "multi_done")
@@ -275,7 +302,7 @@ async def multiselect_done(callback: CallbackQuery, state: FSMContext, db) -> No
         await state.update_data(doc_types=selected_values)
         await state.set_state(OrderFlow.construction_types)
         await state.update_data(multiselect_options=CONSTRUCTION_TYPES, multiselect_selected=[])
-        await callback.message.answer(
+        await callback.message.edit_text(
             "Укажите вид строительства (можно выбрать несколько)",
             reply_markup=multiselect_keyboard(CONSTRUCTION_TYPES, set()),
         )
@@ -291,26 +318,26 @@ async def multiselect_done(callback: CallbackQuery, state: FSMContext, db) -> No
             pending.append("linear")
         await state.update_data(pending_sections=pending)
         await callback.answer()
-        await _ask_next_order_sections(callback.message, state)
+        await _ask_next_order_sections(callback.message, state, edit=True)
         return
 
     if _is_state(current_state, OrderFlow.sections_capital):
         await state.update_data(sections_capital=selected_values)
         await callback.answer()
-        await _ask_next_order_sections(callback.message, state)
+        await _ask_next_order_sections(callback.message, state, edit=True)
         return
 
     if _is_state(current_state, OrderFlow.sections_linear):
         await state.update_data(sections_linear=selected_values)
         await callback.answer()
-        await _ask_next_order_sections(callback.message, state)
+        await _ask_next_order_sections(callback.message, state, edit=True)
         return
 
     if _is_state(current_state, ExecutorReg.doc_types):
         await state.update_data(doc_types=selected_values)
         await state.set_state(ExecutorReg.construction_types)
         await state.update_data(multiselect_options=CONSTRUCTION_TYPES, multiselect_selected=[])
-        await callback.message.answer(
+        await callback.message.edit_text(
             "Укажите вид строительства (можно выбрать несколько)",
             reply_markup=multiselect_keyboard(CONSTRUCTION_TYPES, set()),
         )
@@ -326,19 +353,19 @@ async def multiselect_done(callback: CallbackQuery, state: FSMContext, db) -> No
             pending.append("linear")
         await state.update_data(pending_sections=pending)
         await callback.answer()
-        await _ask_next_executor_sections(callback.message, state, db)
+        await _ask_next_executor_sections(callback.message, state, db, edit=True)
         return
 
     if _is_state(current_state, ExecutorReg.sections_capital):
         await state.update_data(sections_capital=selected_values)
         await callback.answer()
-        await _ask_next_executor_sections(callback.message, state, db)
+        await _ask_next_executor_sections(callback.message, state, db, edit=True)
         return
 
     if _is_state(current_state, ExecutorReg.sections_linear):
         await state.update_data(sections_linear=selected_values)
         await callback.answer()
-        await _ask_next_executor_sections(callback.message, state, db)
+        await _ask_next_executor_sections(callback.message, state, db, edit=True)
         return
 
     await callback.answer()
@@ -463,7 +490,7 @@ async def order_save(callback: CallbackQuery, state: FSMContext, db) -> None:
     await db.update_order(order_id, payload)
     await state.clear()
     user = await db.get_user_by_tg_id(callback.from_user.id)
-    await callback.message.answer("Заказ обновлен.")
+    await callback.message.edit_text("Заказ обновлен.")
     if user:
         await show_customer_menu(callback.message, user, db)
     await callback.answer()
@@ -471,7 +498,7 @@ async def order_save(callback: CallbackQuery, state: FSMContext, db) -> None:
 
 @router.callback_query(F.data.startswith("order_discard:"))
 async def order_discard(callback: CallbackQuery, state: FSMContext) -> None:
-    await callback.message.answer(
+    await callback.message.edit_text(
         "Изменения не сохранены. Сохранить изменения?",
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[

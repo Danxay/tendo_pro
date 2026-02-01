@@ -17,7 +17,7 @@ async def help_new(callback: CallbackQuery, state: FSMContext, db) -> None:
         return
     await state.set_state(HelpState.waiting_text)
     await state.update_data(role=user.get("last_role", ""), user_id=user.get("id"))
-    await callback.message.answer("Опишите проблему одним сообщением", reply_markup=ReplyKeyboardRemove())
+    await callback.message.edit_text("Опишите проблему одним сообщением")
     await callback.answer()
 
 

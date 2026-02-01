@@ -433,4 +433,4 @@ async def cust_close_confirm(callback: CallbackQuery, db) -> None:
                     "Заказ закрыт. Оцените заказчика.",
                     reply_markup=rating_keyboard(f"rate:{order_id}:{order.get('customer_id')}"),
                 )
-    await callback.message.answer("Заказ закрыт.")
+    await callback.message.edit_text("Заказ закрыт.")
